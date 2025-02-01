@@ -1,4 +1,4 @@
-# Contributor
+# Contributor cek
 | Name  | Job Description |
 | ------------- | ------------- |
 | Brillyando Magathan Achmad  | Data Preparation, Data Cleaning, and Data Preprocessing. Create, Build, and Develope RAG System, Prompt Engineering, implement Virtual Try-on and integrate to streamlit, integrate to Google Cloud Storage and Deploy to Cloud Run  |
