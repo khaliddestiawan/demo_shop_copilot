@@ -25,7 +25,7 @@ def upload_to_gcs(bucket_name, source_file_name, destination_blob_name):
     print(f"File {source_file_name} uploaded to {destination_blob_name}.")
 
 if __name__ == "__main__":
-    bucket_name = 'your-gcs-bucket-name'
+    bucket_name = 'demo_gcs'
     
     # Create the bucket if it does not exist
     create_bucket_if_not_exists(bucket_name)

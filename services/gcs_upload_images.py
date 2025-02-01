@@ -18,7 +18,7 @@ def upload_folder_to_gcs(bucket_name, local_folder, gcs_folder):
             print(f"Uploaded {local_file_path} to {gcs_file_path}.")
 
 if __name__ == "__main__":
-    bucket_name = 'your-gcs-bucket-name'
+    bucket_name = 'demo_gcs'
     
     # Create the bucket if it does not exist
     create_bucket_if_not_exists(bucket_name)

@@ -5,7 +5,7 @@ import pandas as pd
 import gcsfs  # Required for pandas GCS access
 
 # GCS ACCESS:
-bucket_name = 'your-gcs-bucket-name'  # Match bucket name from services
+bucket_name = 'demo_gcs'  # Match bucket name from services
 customer_interactions_path = f'gs://{bucket_name}/Dataset/Customer_Interaction_Data_v3.csv'
 df = pd.read_csv(customer_interactions_path)
 

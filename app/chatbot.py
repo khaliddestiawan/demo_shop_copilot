@@ -25,7 +25,7 @@ openai_api_key = os.getenv("OPENAI_API_KEY")
 #os.environ["OPENAI_API_KEY"] = openai_api_key
 
 # Load datasets from GCS
-bucket_name = 'your-gcs-bucket-name'
+bucket_name = 'demo_gcs'
 customer_interactions_path = f'gs://{bucket_name}/Dataset/Customer_Interaction_Data_v3.csv'
 product_catalog_path = f'gs://{bucket_name}/Dataset/final_product_catalog.csv'
 
