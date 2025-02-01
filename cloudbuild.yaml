@@ -15,33 +15,34 @@ steps:
 
   # Build and push Docker image
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'gcr.io/inspired-memory-449608-f9/chatbot-service', '.']
+    args: ['build', '-t', 'gcr.io/inspired-memory-449608-f9/personalized-shopping-copilot', '.']
 
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'gcr.io/inspired-memory-449608-f9/chatbot-service']
+    args: ['push', 'gcr.io/inspired-memory-449608-f9/personalized-shopping-copilot']
 
   # Deploy to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
     args:
-      - 'gcloud'
       - 'run'
       - 'deploy'
-      - 'chatbot-service'
-      - '--image=gcr.io/inspired-memory-449608-f9/chatbot-service'
-      - '--platform=managed'
-      - '--region=us-central1'
+      - 'personalized-shopping-copilot'
+      - '--image'
+      - 'gcr.io/inspired-memory-449608-f9/personalized-shopping-copilot:latest'
+      - '--region'
+      - 'us-central1'
+      - '--platform'
+      - 'managed'
       - '--allow-unauthenticated'
-      - '--set-env-vars=OPENAI_API_KEY=${_OPENAI_API_KEY},BUCKET_NAME=${_BUCKET_NAME}'
-      - '--port=8501'
-    entrypoint: bash
-
-availableSecrets:
-  secretManager:
-    - versionName: projects/inspired-memory-449608-f9/secrets/openai-api-key/versions/latest
-      env: '_OPENAI_API_KEY'
+      - '--timeout'
+      - '900s'
+      - '--set-secrets'
+      - 'OPENAI_API_KEY=projects/inspired-memory-449608-f9/secrets/openai-api-key/versions/latest'
+      - '--set-env-vars'
+      - 'BUCKET_NAME=${_BUCKET_NAME}'
 
 options:
   logging: CLOUD_LOGGING_ONLY
 
 substitutions:
-  _BUCKET_NAME: 'demo_gcs'
+  _BUCKET_NAME: demo_gcs
