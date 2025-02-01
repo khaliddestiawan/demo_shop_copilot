@@ -37,7 +37,7 @@ steps:
       - '--timeout'
       - '900s'
       - '--set-secrets'
-      - 'OPENAI_API_KEY=projects/inspired-memory-449608-f9/secrets/openai-api-key:latest'
+      - 'OPENAI_API_KEY=projects/inspired-memory-449608-f9/secrets/openai-api-key'
       - '--set-env-vars'
       - 'BUCKET_NAME=${_BUCKET_NAME}'
 
