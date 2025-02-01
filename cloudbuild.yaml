@@ -1,8 +1,6 @@
-options:
-  logging: CLOUD_LOGGING_ONLY
 steps:
   # Initial GCS setup (will skip if bucket exists)
-  - name: python:3.10
+  - name: python:3.9-slim
     id: gcs-setup
     entrypoint: bash
     args:
@@ -42,5 +40,8 @@ availableSecrets:
     - versionName: projects/inspired-memory-449608-f9/secrets/openai-api-key/versions/latest
       env: '_OPENAI_API_KEY'
 
+options:
+  logging: CLOUD_LOGGING_ONLY
+
 substitutions:
-  _BUCKET_NAME: demo_gcs
+  _BUCKET_NAME: 'demo_gcs'
