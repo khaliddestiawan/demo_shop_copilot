@@ -37,7 +37,7 @@ steps:
       - '--timeout'
       - '900s'
       - '--set-secrets'
-      - 'OPENAI_API_KEY=projects/inspired-memory-449608-f9/secrets/openai-api-key/versions/latest'
+      - 'OPENAI_API_KEY=projects/inspired-memory-449608-f9/secrets/openai-api-key:latest'
       - '--set-env-vars'
       - 'BUCKET_NAME=${_BUCKET_NAME}'
 
@@ -45,4 +45,4 @@ options:
   logging: CLOUD_LOGGING_ONLY
 
 substitutions:
-  _BUCKET_NAME: demo_gcs
+  _BUCKET_NAME: 'demo_gcs'
