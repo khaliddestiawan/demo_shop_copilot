@@ -1,0 +1,46 @@
+options:
+  logging: CLOUD_LOGGING_ONLY
+steps:
+  # Initial GCS setup (will skip if bucket exists)
+  - name: python:3.10
+    id: gcs-setup
+    entrypoint: bash
+    args:
+      - '-c'
+      - |
+        pip install google-cloud-storage
+        python services/gcs_upload.py
+        python services/gcs_upload_images.py
+        echo "GCS setup completed or already exists"
+    env:
+      - BUCKET_NAME=${_BUCKET_NAME}
+
+  # Build and push Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/inspired-memory-449608-f9/chatbot-service', '.']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/inspired-memory-449608-f9/chatbot-service']
+
+  # Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    args:
+      - 'gcloud'
+      - 'run'
+      - 'deploy'
+      - 'chatbot-service'
+      - '--image=gcr.io/inspired-memory-449608-f9/chatbot-service'
+      - '--platform=managed'
+      - '--region=us-central1'
+      - '--allow-unauthenticated'
+      - '--set-env-vars=OPENAI_API_KEY=${_OPENAI_API_KEY},BUCKET_NAME=${_BUCKET_NAME}'
+      - '--port=8501'
+    entrypoint: bash
+
+availableSecrets:
+  secretManager:
+    - versionName: projects/inspired-memory-449608-f9/secrets/openai-api-key/versions/latest
+      env: '_OPENAI_API_KEY'
+
+substitutions:
+  _BUCKET_NAME: demo_gcs
