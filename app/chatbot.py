@@ -11,27 +11,19 @@ from gradio_client import Client as GradioClient, file, handle_file
 import cv2
 from dotenv import load_dotenv
 import glob
-import gcsfs  # Import gcsfs to read from GCS
-from google.cloud import storage  # Added for GCS image access
 
 
 # open your openai api key in file .env
 # Memuat file .env
-load_dotenv()
-openai_api_key = os.getenv("OPENAI_API_KEY")
+#load_dotenv()
+#openai_api_key = os.getenv("OPENAI_API_KEY")
 
 # Please fill your openai api key
-#openai_api_key = ""
-#os.environ["OPENAI_API_KEY"] = openai_api_key
+openai_api_key = ""
+os.environ["OPENAI_API_KEY"] = openai_api_key
 
-# Load datasets from GCS
-bucket_name = 'demo_gcs'
-customer_interactions_path = f'gs://{bucket_name}/Dataset/Customer_Interaction_Data_v3.csv'
-product_catalog_path = f'gs://{bucket_name}/Dataset/final_product_catalog.csv'
-
-# read dataset
-df = pd.read_csv(customer_interactions_path)
-df_products = pd.read_csv(product_catalog_path)
+df = pd.read_csv('Dataset/Customer_Interaction_Data_v3.csv')
+df_products = pd.read_csv('Dataset/final_product_catalog.csv')
 
 # 1. Create Vector Database
 def load_vector_db():
@@ -134,47 +126,32 @@ def virtual_tryon(garment_img_path, person_img_path):
 def render_product(product_id):
     filtered_df = df_products[df_products['Product_ID'] == product_id]
     if not filtered_df.empty:
-
-        # initialize GCS client & Bucket
-        storage_client = storage.Client()
-        #bucket_name = bucket_name
-        bucket = storage_client.bucket(bucket_name)
-
-        # Search for product images in GCS under 'images/products/'
-        prefix = f"images/products/{product_id}"
-        blobs = bucket.list_blobs(prefix=prefix)
-
-        image_found = False
-        for blob in blobs:
-            # Check for valid image extensions
-            if blob.name.lower().endswith(('.jpg', '.jpeg', '.png')):
-                # Download to temporary file
-                temp_file = f"temp_{product_id}.{blob.name.split('.')[-1]}"
-                blob.download_to_filename(temp_file)
-                img = Image.open(temp_file)
-                img.thumbnail((300, 600))
-                
-                # Display components
-                col1, col2, col3 = st.columns([1, 2, 1])
-                with col2:
-                    st.subheader(f"{product_id}")
-                    st.image(img)
-                    st.button(
-                        f"Virtual Try-On for {product_id}",
-                        key=f"try_{product_id}",
-                        on_click=handle_click,
-                        args=("Try ", product_id, temp_file),
-                    )
-                image_found = True
-                break
+        # Tentukan folder tempat gambar disimpan
+        image_folder = "images"
         
-        if not image_found:
-            st.error(f"Image for product {product_id} not found in GCS.")
-       
-    else:
-        st.error(f"Product {product_id} not found in catalog.")
-        
-        
+        # Cari file gambar berdasarkan product_id tanpa memperhatikan ekstensi
+        pattern = os.path.join(image_folder, f"{product_id}.*")  # Pola: images/101.*
+        matching_files = glob.glob(pattern)  # Mencari file dengan ekstensi apapun
+
+        if matching_files:
+            image_path = matching_files[0]  # Ambil file pertama yang ditemukan
+            img = Image.open(image_path)
+            img.thumbnail((300, 600))  # Atur ukuran maksimum
+
+            # Menggunakan tiga kolom untuk memusatkan elemen
+            col1, col2, col3 = st.columns([1, 2, 1])  # Rasio kolom: kiri, tengah, kanan
+            with col2:  # Konten di kolom tengah
+                st.subheader(f"{product_id}")
+                st.image(img)
+                st.button(
+                    f"Virtual Try-On for {product_id}",
+                    key=f"try_{product_id}",
+                    on_click=handle_click,
+                    args=("Try ", product_id, image_path),
+                )
+        else:
+            # Jika gambar tidak ditemukan
+            st.error(f"Gambar untuk produk {product_id} tidak ditemukan.")
 
 # Fungsi utama chatbot
 def chatbot_function(email):

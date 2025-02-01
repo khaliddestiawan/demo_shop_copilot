@@ -2,12 +2,8 @@ import streamlit as st
 from dashboard import dashboard_function  # Pastikan untuk mengimpor fungsi atau komponen dari Dashboard.py
 from chatbot import chatbot_function  # Pastikan untuk mengimpor fungsi atau komponen dari app.py yang berhubungan dengan chatbot
 import pandas as pd
-import gcsfs  # Required for pandas GCS access
 
-# GCS ACCESS:
-bucket_name = 'demo_gcs'  # Match bucket name from services
-customer_interactions_path = f'gs://{bucket_name}/Dataset/Customer_Interaction_Data_v3.csv'
-df = pd.read_csv(customer_interactions_path)
+df = pd.read_csv('Dataset/Customer_Interaction_Data_v3.csv')
 
 # Fungsi untuk halaman login
 def login():
