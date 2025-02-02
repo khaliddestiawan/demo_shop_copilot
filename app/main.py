@@ -33,7 +33,7 @@ def main():
         if menu == "Chatbot":
             information = (
                 "**How to Use:**\n"
-                "- Describe the clothing you’re looking for.\n"
+                "- Describe the clothing you're looking for from the available options: **Dress, Jacket, Skirt, Coat, Suit, Shirt.**.\n"
                 "- To try on a product virtually, click the **Virtual Try-On** button and upload your image.\n\n"
                 "**Example Queries:**\n"
                 "- *Show me blue suits for a conference.*\n"

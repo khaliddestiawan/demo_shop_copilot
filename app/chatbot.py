@@ -1,5 +1,6 @@
 import streamlit as st
 from PIL import Image
+import urllib.request 
 import os
 import pandas as pd
 from langchain_openai import OpenAIEmbeddings
@@ -7,7 +8,7 @@ import openai
 from langchain.vectorstores import FAISS
 import os
 import re
-from gradio_client import Client as GradioClient, file, handle_file
+import replicate
 import cv2
 from dotenv import load_dotenv
 import glob
@@ -23,7 +24,7 @@ openai_api_key = ""
 os.environ["OPENAI_API_KEY"] = openai_api_key
 
 df = pd.read_csv('Dataset/Customer_Interaction_Data_v3.csv')
-df_products = pd.read_csv('Dataset/final_product_catalog.csv')
+df_products = pd.read_csv('Dataset/final_product_catalog_v2.csv')
 
 # 1. Create Vector Database
 def load_vector_db():
@@ -105,23 +106,27 @@ def handle_click(action, product_id, url):
     st.session_state.waiting_for_image = True
 
 # virtual try on function
-def virtual_tryon(garment_img_path, person_img_path):
-    gradio_client = GradioClient("Nymbo/Virtual-Try-On")
-    result = gradio_client.predict(
-                dict={"background": file(person_img_path), "layers": [], "composite": None},
-                garm_img=handle_file(garment_img_path),
-                garment_des="",
-                is_checked=True,
-                is_checked_crop=False,
-                denoise_steps=30,
-                seed=42,
-                api_name="/tryon"
-            )
-    try_on_image_path = result[0]
-    img = cv2.imread(try_on_image_path)
-    cv2.imwrite("result.png", img)
+def virtual_tryon(garment_img_path, person_img_path, prod_id):
+    garment_image = open(garment_img_path, "rb")
+    person_image = open(person_img_path, "rb")
+    type = df_products[df_products['Product_ID'] == prod_id]["Type"].to_string(index=False)
+    short_desc = df_products[df_products['Product_ID'] == prod_id]["Category"].to_string(index=False)
+    print("vton")
+    input = {
+        "seed": 42,
+        "steps": 30,
+        "category": type,
+        "garm_img": garment_image,
+        "human_img": person_image,
+        "garment_des": short_desc,
+    }
 
-    return Image.open("result.png")
+    output = replicate.run(
+        "cuuupid/idm-vton:c871bb9b046607b680449ecbae55fd8c6d945e0a1948644bf2361b3d021d3ff4",
+        input=input
+    )
+    print("done")
+    return str(output)
 
 def render_product(product_id):
     filtered_df = df_products[df_products['Product_ID'] == product_id]
@@ -235,12 +240,15 @@ def chatbot_function(email):
 
             with st.spinner('Virtual try on is running...'):
                 print(st.session_state.product_url)
-                result_vto = virtual_tryon(st.session_state.product_url, uploaded_image.name)
+                result_vto = virtual_tryon(st.session_state.product_url, uploaded_image.name, st.session_state.product_id)
             st.success("Done!")
-
+            urllib.request.urlretrieve( 
+            result_vto, 
+            "result_vto.png")
+            result = Image.open("result_vto.png") 
             # tampilkan hasilnya
-            result_vto.thumbnail((300, 600))
-            st.image(result_vto, caption=f"Try on for {st.session_state.product_id}")
+            result.thumbnail((300, 600))
+            st.image(result, caption=f"Try on for {st.session_state.product_id}")
 
             # Stop asking for the image
             st.session_state.waiting_for_image = False

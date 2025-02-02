@@ -1,8 +1,8 @@
-# Contributor cek
+# Contributor
 | Name  | Job Description |
 | ------------- | ------------- |
 | Brillyando Magathan Achmad  | Data Preparation, Data Cleaning, and Data Preprocessing. Create, Build, and Develope RAG System, Prompt Engineering, implement Virtual Try-on and integrate to streamlit, integrate to Google Cloud Storage and Deploy to Cloud Run  |
-| Putra Al Farizi  | Data Preparation, Data Preprocessing, Analyze Retention Rate, Average Order Value and Conversion Rate, and Develop Chatbot Application with RAG|
+| Putra Al Farizi  | Data Preparation, Data Preprocessing, Analyze Dataset in Notebook, Develop Chatbot Application using Streamlit with RAG, Streaming Output and Deploy to Cloud Run|
 | Khalid Destiawan  | Data Preparation, Analyze Retention Rate, Average Order Value and Conversion Rate. Dashboard development |
 
 # Business Understanding
