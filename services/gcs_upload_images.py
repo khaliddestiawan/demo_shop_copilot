@@ -2,7 +2,7 @@
 
 from google.cloud import storage
 import os
-from gcs_upload import create_bucket_if_not_exists  # Import the necessary functions
+# from gcs_upload import create_bucket_if_not_exists  # Import the necessary functions
 
 def upload_folder_to_gcs(bucket_name, local_folder, gcs_folder):
     """Uploads an entire folder to GCS."""
@@ -18,10 +18,10 @@ def upload_folder_to_gcs(bucket_name, local_folder, gcs_folder):
             print(f"Uploaded {local_file_path} to {gcs_file_path}.")
 
 if __name__ == "__main__":
-    bucket_name = 'demo_gcs'
+    bucket_name = 'demo_ikra'
     
     # Create the bucket if it does not exist
-    create_bucket_if_not_exists(bucket_name)
+    # create_bucket_if_not_exists(bucket_name)
     
     # Upload images to GCS
-    upload_folder_to_gcs(bucket_name, 'images', 'images/products/')
+    upload_folder_to_gcs(bucket_name, 'images', 'image/')

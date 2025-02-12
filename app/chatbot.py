@@ -13,23 +13,41 @@ import cv2
 from dotenv import load_dotenv
 import glob
 
+from io import StringIO, BytesIO
+from google.cloud import storage
+import replicate
+import requests
+
 
 # open your openai api key in file .env
 # Memuat file .env
-#load_dotenv()
-#openai_api_key = os.getenv("OPENAI_API_KEY")
+load_dotenv()
+openai_api_key = os.getenv("OPENAI_API_KEY")
 
 # Please fill your openai api key
-openai_api_key = ""
-os.environ["OPENAI_API_KEY"] = openai_api_key
+# openai_api_key = ""
+# os.environ["OPENAI_API_KEY"] = openai_api_key
 
-df = pd.read_csv('Dataset/Customer_Interaction_Data_v3.csv')
-df_products = pd.read_csv('Dataset/final_product_catalog_v2.csv')
+# import dataset from GCS
+client = storage.Client()
+bucket_name = "demo_ikra"
+bucket = client.bucket(bucket_name)
+
+blob_cust_interaction = bucket.blob('Dataset/Customer_Interaction_Data_v3.csv')
+blob_product_catalog = bucket.blob('Dataset/final_product_catalog_v2.csv')
+cust_interaction = blob_cust_interaction.download_as_text()
+prod_catalog = blob_product_catalog.download_as_text()
+df = pd.read_csv(StringIO(cust_interaction))
+df_products = pd.read_csv(StringIO(prod_catalog))
+
+# df = pd.read_csv('Dataset/Customer_Interaction_Data_v3.csv')
+# df_products = pd.read_csv('Dataset/final_product_catalog_v2.csv')
 
 # 1. Create Vector Database
 def load_vector_db():
     embeddings = OpenAIEmbeddings(model="text-embedding-ada-002", openai_api_key=openai.api_key)
     #vector_db = FAISS.from_documents(documents, embeddings)
+    # index_path = os.path.join(os.path.dirname(__file__), "faiss_index")
     vector_db = FAISS.load_local('faiss_index', embeddings, allow_dangerous_deserialization=True)
     return vector_db
 
@@ -50,20 +68,22 @@ def generate_streaming_response_openai(query, docs, purchase_hist):
     # Combine retrieved documents into context
     context = "\n\n".join([doc.page_content for doc in docs])
     prompt = (
-        "You are an expert product recommendation assistant, designed to provide precise and thoughtful suggestions of fashion. "
-        "Your primary goal is to recommend up to three products based on the provided context, purchase history, and customer query. "
-        "If a question is unrelated to product recommendations, politely inform the user that you can only assist with product-related topics. "
-        "If a query requests gender-specific products, respond with: 'Our catalog has no gender-specific products.' "
-        "Here’s how you should answer: \n\n"
-        "- Always analyze and incorporate similarities from the provided purchase history and context. \n"
-        "- Provide a clear and concise explanation for why each product is recommended. \n"
-        "- Include the product ID for every recommended product. \n"
-        "- Maintain a polite and friendly tone.\n\n"
-        f"Context: {context}\n\n"
-        f"Purchase History: {purchase_hist}\n\n"
-        f"Question: {query}\n\n"
-        "Your response should balance accuracy and detail while remaining concise."
-    )
+    "You are an expert product recommendation assistant, designed to provide precise and thoughtful suggestions of fashion. "
+    "If the user's input is unclear and meaningless, politely inform the user that you can only assist with recommending products, and do not generate suggestions. "
+    "If the product in question is not in the catalog, answer that our product only contain Dress, Jacket, Skirt, Coat, Suit, and Shirt. "
+    "If a query requests gender-specific products, respond with: 'Our catalog has no gender-specific products.' "
+    "Your primary goal is to recommend up to three products based on the provided context, purchase history, and customer query. "
+    "Here’s how you should answer: \n\n"
+    "- If the query does not indicate an interest in fashion products, respond with: 'I can only assist with product recommendations. Please provide more details.'\n"
+    "- Always analyze and incorporate similarities from the provided purchase history and context.\n"
+    "- Provide a clear and concise explanation for why each product is recommended.\n"
+    "- Include the product ID for every recommended product.\n"
+    "- Maintain friendly tone.\n\n"
+    f"Context: {context}\n\n"
+    f"Purchase History: {purchase_hist}\n\n"
+    f"Question: {query}\n\n"
+    "Your response should balance accuracy and detail while remaining concise."
+)
 
     # Call OpenAI API with streaming
     response = openai.chat.completions.create(
@@ -107,17 +127,27 @@ def handle_click(action, product_id, url):
 
 # virtual try on function
 def virtual_tryon(garment_img_path, person_img_path, prod_id):
-    garment_image = open(garment_img_path, "rb")
-    person_image = open(person_img_path, "rb")
+    garment_image = download_image_from_gcs(garment_img_path)
+    person_image = download_image_from_gcs(person_img_path)
+    garment_file = BytesIO()
+    person_file = BytesIO()
+    if garment_image.mode == "RGBA":
+        garment_image = garment_image.convert("RGB")
+    if person_image.mode == "RGBA":
+        person_image = person_image.convert("RGB")
+    garment_image.save(garment_file, format="JPEG")
+    person_image.save(person_file, format="JPEG")
+    garment_file.seek(0)
+    person_file.seek(0)
     type = df_products[df_products['Product_ID'] == prod_id]["Type"].to_string(index=False)
     short_desc = df_products[df_products['Product_ID'] == prod_id]["Category"].to_string(index=False)
-    print("vton")
+
     input = {
         "seed": 42,
         "steps": 30,
         "category": type,
-        "garm_img": garment_image,
-        "human_img": person_image,
+        "garm_img": garment_file,
+        "human_img": person_file,
         "garment_des": short_desc,
     }
 
@@ -125,38 +155,145 @@ def virtual_tryon(garment_img_path, person_img_path, prod_id):
         "cuuupid/idm-vton:c871bb9b046607b680449ecbae55fd8c6d945e0a1948644bf2361b3d021d3ff4",
         input=input
     )
-    print("done")
-    return str(output)
+    response = requests.get(str(output))
+    img = Image.open(BytesIO(response.content))
+    return img
+
+def upload_image_to_gcs(image_bytes, image_name):
+    blob = bucket.blob(image_name)
+    blob.upload_from_string(image_bytes, content_type='image/jpeg')
+    #return f"gs://{bucket.name}/{image_name}"
+
+def download_image_from_gcs(img_path):
+    blob = client.bucket(bucket_name).blob(img_path)
+
+    try:
+        image_bytes = blob.download_as_bytes()
+        image = Image.open(BytesIO(image_bytes)).convert("RGB")
+        return image
+    except Exception as e:
+        raise Exception(f"Error downloading image: {e}")
+    
+    # image_bytes = blob.download_as_bytes()
+    # image = Image.open(BytesIO(image_bytes)).convert("RGB")
+    # return image
 
 def render_product(product_id):
     filtered_df = df_products[df_products['Product_ID'] == product_id]
     if not filtered_df.empty:
+        # Mendapatkan URL gambar atau file path
+        url = filtered_df['Url_Image'].iloc[0]
+        img = download_image_from_gcs(url)
+        img.thumbnail((300, 600))  # Maksimum lebar dan tinggi
+
         # Tentukan folder tempat gambar disimpan
-        image_folder = "images"
+        # image_folder = "images"
         
-        # Cari file gambar berdasarkan product_id tanpa memperhatikan ekstensi
-        pattern = os.path.join(image_folder, f"{product_id}.*")  # Pola: images/101.*
-        matching_files = glob.glob(pattern)  # Mencari file dengan ekstensi apapun
+        # # Cari file gambar berdasarkan product_id tanpa memperhatikan ekstensi
+        # pattern = os.path.join(image_folder, f"{product_id}.*")  # Pola: images/101.*
+        # matching_files = glob.glob(pattern)  # Mencari file dengan ekstensi apapun
 
-        if matching_files:
-            image_path = matching_files[0]  # Ambil file pertama yang ditemukan
-            img = Image.open(image_path)
-            img.thumbnail((300, 600))  # Atur ukuran maksimum
+        # if matching_files:
+        #     image_path = matching_files[0]  # Ambil file pertama yang ditemukan
+        #     img = Image.open(image_path)
+        #     img.thumbnail((300, 600))  # Atur ukuran maksimum
 
-            # Menggunakan tiga kolom untuk memusatkan elemen
-            col1, col2, col3 = st.columns([1, 2, 1])  # Rasio kolom: kiri, tengah, kanan
-            with col2:  # Konten di kolom tengah
-                st.subheader(f"{product_id}")
-                st.image(img)
-                st.button(
-                    f"Virtual Try-On for {product_id}",
-                    key=f"try_{product_id}",
-                    on_click=handle_click,
-                    args=("Try ", product_id, image_path),
+        # Menggunakan tiga kolom untuk memusatkan elemen
+        col1, col2, col3 = st.columns([1, 2, 1])  # Rasio kolom: kiri, tengah, kanan
+        with col2:  # Konten di kolom tengah
+            st.subheader(f"{product_id}")
+            st.image(img)
+            st.button(
+                f"Virtual Try-On for {product_id}",
+                key=f"try_{product_id}",
+                on_click=handle_click,
+                args=("Try ", product_id, url),
                 )
-        else:
-            # Jika gambar tidak ditemukan
-            st.error(f"Gambar untuk produk {product_id} tidak ditemukan.")
+            
+    else:
+        # Jika gambar tidak ditemukan
+        st.error(f"Image for Product {product_id} not found.")
+
+def render_product_horizontal():
+    if st.session_state.product_ids:
+        # image_folder = "images"
+        cols = st.columns(len(st.session_state.product_ids))  # Buat kolom berdasarkan jumlah produk
+        
+        for idx, product_id in enumerate(st.session_state.product_ids):
+            filtered_df = df_products[df_products['Product_ID'] == product_id]
+            if not filtered_df.empty:
+                # pattern = os.path.join(image_folder, f"{product_id}.*")
+                # matching_files = glob.glob(pattern)
+                
+                url = filtered_df['Url_Image'].iloc[0]
+                img = download_image_from_gcs(url)
+                img = img.resize((300, 400))
+
+                # if matching_files:
+                #     image_path = matching_files[0]
+                #     img = Image.open(image_path)
+                #     img = img.resize((300, 400))  # Pastikan semua gambar memiliki rasio 3:4
+                    
+                with cols[idx]:  # Menempatkan konten dalam kolom
+                    st.markdown(f"<h3 style='text-align: center;'>{product_id}</h3>", unsafe_allow_html=True)
+                    st.image(img)
+                    # Gunakan markdown untuk layout tombol ke tengah
+                    col1, col2, col3 = st.columns([1, 2, 1])
+                    with col2:  # Pusatkan tombol
+                        st.button(
+                            "Try-On",
+                            key=f"try_{product_id}_{idx}",  # Tambahkan indeks untuk keunikan
+                            on_click=handle_click,
+                            args=("Try ", product_id, url),
+                            )
+            else:
+                with cols[idx]:
+                    st.error(f"Image for Product {product_id} not found.")
+
+# Function to display styled chat messages
+def chat_message(role, content):
+    if role == "user":
+        # User message aligned right
+        st.markdown(
+            f"""
+            <div style='text-align: right; background-color: #3a3d43; padding: 10px; border-radius: 10px; margin: 5px 0; width: fit-content; max-width: 70%; float: right;'>
+                {content}
+            </div>
+            <div style='clear: both;'></div>
+            """,
+            unsafe_allow_html=True
+        )
+    else:
+        # Assistant message aligned left
+        st.chat_message(role, avatar="material/bot_icon2.png").markdown(content)
+        
+        
+def chat_message_two_icon(role, content):
+    if role == "user":
+        st.markdown(
+            f"""
+            <div style='display: flex; justify-content: flex-end; align-items: center; margin: 5px 0;'>
+                <div style='background-color: #1F45FC; padding: 10px; border-radius: 10px; max-width: 80%; text-align: right;'>
+                    {content}
+                </div>
+                <img src="https://cdn-icons-png.flaticon.com/512/9131/9131529.png" width="30" height="30" style="border-radius: 50%; margin-left: 10px;">
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+    else:
+        st.markdown(
+            f"""
+            <div style='display: flex; align-items: top; margin: 5px 0;'>
+                <img src="https://cdn-icons-png.flaticon.com/512/4712/4712035.png" width="30" height="30" style="border-radius: 50%; margin-right: 10px;">
+                <div style='background-color: #808080; padding: 10px; border-radius: 10px; max-width: 80%; text-align: left;'>
+                    {content}
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+  
 
 # Fungsi utama chatbot
 def chatbot_function(email):
@@ -191,12 +328,41 @@ def chatbot_function(email):
 
     # Menampilkan percakapan sebelumnya
     for msg in st.session_state.messages:
-        st.chat_message(msg["role"]).markdown(msg["content"])
+        chat_message(msg["role"], msg["content"])
+
     # Input pengguna
-    if prompt := st.chat_input(placeholder="Type here for recommend product..."):
+    prompt = st.chat_input(placeholder="Type here for recommend product...")
+    st.markdown("""
+    <style>
+    /* text area chat input */
+    [data-testid="stChatInput"] textarea {
+        border: 1px solid #ffffff !important;
+        border-radius: 8px !important; 
+    }
+
+    /* Chat input submit button */
+    [data-testid="stChatInputSubmitButton"] {
+        border-radius: 50% !important;
+        padding: 0 !important; 
+        background-color: #334092 !important;
+        border: none !important;
+        width: 30px !important;
+        height: 30px !important;
+        position: absolute !important;
+        right: 10px !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+        display: flex !important;
+        align-items: center !important;  
+        justify-content: center !important;
+    }
+
+    </style>
+    """, unsafe_allow_html=True)
+    if prompt:
         # Simpan dan tampilkan input pengguna
         st.session_state.messages.append({"role": "user", "content": prompt})
-        st.chat_message("user").write(prompt)
+        chat_message("user", prompt)
         
         try:
             inputs = {"query": prompt, "customer": st.session_state["customer_id"]}
@@ -208,7 +374,7 @@ def chatbot_function(email):
 
         # Simpan dan tampilkan respons dari asisten
         st.session_state.messages.append({"role": "assistant", "content": response})
-        st.chat_message("assistant").markdown(response)
+        chat_message("assistant", response)
 
         # Extract raw output
         output = response
@@ -218,11 +384,12 @@ def chatbot_function(email):
         unique_product_ids = list(set(product_ids))
         st.session_state.product_ids = unique_product_ids
 
-    if st.session_state.product_ids:
-        for product_id in st.session_state.product_ids:
-            # Validasi product_ids di df_product
-            with st.container():
-                render_product(product_id)
+    render_product_horizontal()
+    # if st.session_state.product_ids:
+    #     for product_id in st.session_state.product_ids:
+    #         # Validasi product_ids di df_product
+    #         with st.container():
+    #             render_product(product_id)
 
         # Jika sedang menunggu gambar
     if st.session_state.waiting_for_image:
@@ -234,19 +401,27 @@ def chatbot_function(email):
             image = Image.open(uploaded_image)
             image.thumbnail((300, 600))
             st.image(image, caption="Your image")
-            with open(uploaded_image.name, "wb") as f:
-                f.write(uploaded_image.getbuffer())
+            # with open(uploaded_image.name, "wb") as f:
+            #     f.write(uploaded_image.getbuffer())
+
+            image_bytes = uploaded_image.getvalue()
+            upload_image_to_gcs(image_bytes, uploaded_image.name)
             st.success(f"Image uploaded and saved successfully!")
 
             with st.spinner('Virtual try on is running...'):
                 print(st.session_state.product_url)
                 result_vto = virtual_tryon(st.session_state.product_url, uploaded_image.name, st.session_state.product_id)
             st.success("Done!")
-            urllib.request.urlretrieve( 
-            result_vto, 
-            "result_vto.png")
-            result = Image.open("result_vto.png") 
+
+            # urllib.request.urlretrieve( 
+            # result_vto, 
+            # "result_vto.png")
+
+            # Save the Image object directly
+            result_vto.save("result_vto.png")
+
             # tampilkan hasilnya
+            result = Image.open("result_vto.png") 
             result.thumbnail((300, 600))
             st.image(result, caption=f"Try on for {st.session_state.product_id}")
 
