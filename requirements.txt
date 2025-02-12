@@ -5,4 +5,4 @@ gradio_client==1.5.2
 opencv-python==4.10.0.84
 faiss-cpu==1.9.0.post1
 replicate==1.0.4
-plotly-6.0.0
+plotly==6.0.0
