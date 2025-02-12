@@ -1,48 +1,40 @@
-steps:
-  # Initial GCS setup (will skip if bucket exists)
-  - name: python:3.9-slim
-    id: gcs-setup
-    entrypoint: bash
-    args:
-      - '-c'
-      - |
-        pip install google-cloud-storage
-        python services/gcs_upload.py
-        python services/gcs_upload_images.py
-        echo "GCS setup completed or already exists"
-    env:
-      - BUCKET_NAME=${_BUCKET_NAME}
-
-  # Build and push Docker image
-  - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'gcr.io/inspired-memory-449608-f9/personalized-shopping-copilot', '.']
-
-  - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'gcr.io/inspired-memory-449608-f9/personalized-shopping-copilot']
-
-  # Deploy to Cloud Run
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    entrypoint: gcloud
-    args:
-      - 'run'
-      - 'deploy'
-      - 'personalized-shopping-copilot'
-      - '--image'
-      - 'gcr.io/inspired-memory-449608-f9/personalized-shopping-copilot:latest'
-      - '--region'
-      - 'us-central1'
-      - '--platform'
-      - 'managed'
-      - '--allow-unauthenticated'
-      - '--timeout'
-      - '900s'
-      - '--set-secrets'
-      - 'OPENAI_API_KEY=projects/inspired-memory-449608-f9/secrets/openai-api-key'
-      - '--set-env-vars'
-      - 'BUCKET_NAME=${_BUCKET_NAME}'
-
 options:
   logging: CLOUD_LOGGING_ONLY
+steps:
+  #build
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/inspired-memory-449608-f9/chatbot-app:latest', '.']
+  #push
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/inspired-memory-449608-f9/chatbot-app:latest']
+  #deploy to cloud run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args: #['run', 'deploy', 'chatbot-app', '--image', 'gcr.io/inspired-memory-449608-f9/chatbot-app:latest', '--region', 'us-central1', '--platform', 'managed', '--allow-unauthenticated']
+    [
+        'run',
+        'deploy',
+        'chatbot-app',
+        '--image',
+        'gcr.io/YOUR_PROJECT_ID/chatbot-app:latest',
+        '--region',
+        'us-central1',
+        '--platform',
+        'managed',
+        '--set-env-vars',
+        'OPENAI_API_KEY=${_OPENAI_API_KEY},REPLICATE_API_TOKEN=${_REPLICATE_API_TOKEN}',
+        '--allow-unauthenticated',
+        '--project',
+        'inspired-memory-449608-f9'
+      ]
 
-substitutions:
-  _BUCKET_NAME: 'demo_gcs'
+images:
+  - 'gcr.io/inspired-memory-449608-f9/chatbot-app:latest'
+
+# secret manager integration
+secrets:
+  - secret: 'openai-api-key'  # Name of the secret in Secret Manager
+    env-var: '_OPENAI_API_KEY'
+  
+  - secret: 'replicate-api-key'  # Name of the secret in Secret Manager
+    env-var: '_REPLICATE_API_TOKEN'

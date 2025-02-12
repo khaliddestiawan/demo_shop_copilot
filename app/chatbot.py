@@ -48,7 +48,7 @@ def load_vector_db():
     embeddings = OpenAIEmbeddings(model="text-embedding-ada-002", openai_api_key=openai.api_key)
     #vector_db = FAISS.from_documents(documents, embeddings)
     # index_path = os.path.join(os.path.dirname(__file__), "faiss_index")
-    vector_db = FAISS.load_local('faiss_index', embeddings, allow_dangerous_deserialization=True)
+    vector_db = FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
     return vector_db
 
 def retrieve_transcation(cust_id):
