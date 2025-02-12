@@ -10,7 +10,7 @@ steps:
   #deploy to cloud run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: gcloud
-    args: ['run','deploy','chatbot-app','--image','gcr.io/inspired-memory-449608-f9/chatbot-app:latest','--region','us-central1','--platform','managed','--set-env-vars', 'PORT=8080', '--allow-unauthenticated']
+    args: ['run','deploy','chatbot-app','--image','gcr.io/inspired-memory-449608-f9/chatbot-app:latest','--region','us-central1','--platform','managed','--allow-unauthenticated']
 
 images:
   - 'gcr.io/inspired-memory-449608-f9/chatbot-app:latest'

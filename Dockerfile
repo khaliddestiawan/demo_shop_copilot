@@ -8,6 +8,9 @@ RUN pip3 install --no-cache-dir --upgrade -r /code/requirements.txt
 
 COPY ./app ./faiss_index ./material ./.streamlit /code/
 
+# Set environment variable for the port
+ENV PORT=8080
+
 EXPOSE 8080
 
 CMD ["streamlit", "run", "app/main.py", "--server.port=8080", "--server.address=0.0.0.0"]
