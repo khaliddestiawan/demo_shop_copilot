@@ -8,5 +8,5 @@ spec:
   type: LoadBalancer
   ports:
     - protocol: TCP
-      port: 80
-      targetPort: 8501
+      port: 8501
+      targetPort: 80
