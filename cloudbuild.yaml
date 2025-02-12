@@ -18,7 +18,7 @@ steps:
   args:
     - '-c'
     - |
-      gcloud container clusters get-credentials shop-cluster --zone us-central1 --project inspired-memory-449608-f9
+      gcloud container clusters get-credentials shop-cluster --zone us-central1 --project=inspired-memory-449608-f9
 
   # deploy kube config files to google kubernetes engine (GKE)
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
