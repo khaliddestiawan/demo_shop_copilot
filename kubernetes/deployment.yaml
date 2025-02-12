@@ -16,7 +16,7 @@ spec:
         - name: chatbot-service
           image: gcr.io/inspired-memory-449608-f9/shop-copilot:latest
           ports:
-            - containerPort: 8501
+            - containerPort: 80
           env:
             - name: OPENAI_API_KEY
               valueFrom:
