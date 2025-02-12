@@ -10,17 +10,18 @@ steps:
   #deploy to cloud run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: gcloud
-    args: ['run','deploy','chatbot-app','--image','gcr.io/inspired-memory-449608-f9/chatbot-app:latest','--region','us-central1','--platform','managed','--set-env-vars','OPENAI_API_KEY=${_OPENAI_API_KEY},REPLICATE_API_TOKEN=${_REPLICATE_API_TOKEN}','--allow-unauthenticated']
+    args: ['run','deploy','chatbot-app','--image','gcr.io/inspired-memory-449608-f9/chatbot-app:latest','--region','us-central1','--platform','managed','--allow-unauthenticated']
 
 images:
   - 'gcr.io/inspired-memory-449608-f9/chatbot-app:latest'
 
 # secret manager integration
-secrets:
-  - secret: 'openai-api-key'  # Name of the secret in Secret Manager
-    env-vars: '_OPENAI_API_KEY'
+# secrets:
+#   - secret: 'openai-api-key'  # Name of the secret in Secret Manager
+#     env-vars: '_OPENAI_API_KEY'
   
-  - secret: 'replicate-api-key'  # Name of the secret in Secret Manager
-    env-vars: '_REPLICATE_API_TOKEN'
+#   - secret: 'replicate-api-key'  # Name of the secret in Secret Manager
+#     env-vars: 'REPLICATE_API_TOKEN'
 
 #['run', 'deploy', 'chatbot-app', '--image', 'gcr.io/inspired-memory-449608-f9/chatbot-app:latest', '--region', 'us-central1', '--platform', 'managed', '--allow-unauthenticated']
+# '--set-env-vars','OPENAI_API_KEY=${_OPENAI_API_KEY},REPLICATE_API_TOKEN=${_REPLICATE_API_TOKEN}',
