@@ -3,25 +3,31 @@ options:
 steps:
   #build
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'gcr.io/inspired-memory-449608-f9/chatbot-app:latest', '.']
+    args: ['build', '-t', 'gcr.io/inspired-memory-449608-f9/shop-copilot:latest', '.']
   #push
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'gcr.io/inspired-memory-449608-f9/chatbot-app:latest']
+    args: ['push', 'gcr.io/inspired-memory-449608-f9/shop-copilot:latest']
   #deploy to cloud run
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    entrypoint: gcloud
-    args: ['run','deploy','chatbot-app','--image','gcr.io/inspired-memory-449608-f9/chatbot-app:latest','--region','us-central1','--platform','managed','--allow-unauthenticated']
+  # - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  #   entrypoint: gcloud
+  #   args: ['run','deploy','shop-copilot','--image','gcr.io/inspired-memory-449608-f9/shop-copilot:latest','--region','us-central1','--platform','managed','--allow-unauthenticated']
+  
+  # authenticate to GKE
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: 'bash'
+  args:
+    - '-c'
+    - |
+      gcloud container clusters get-credentials shop-cluster --zone us-central1 --project inspired-memory-449608-f9
+
+  # deploy kube config files to google kubernetes engine (GKE)
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: 'bash'
+  args: 
+    - '-c'
+    - |
+      kubectl apply -f kubernetes/deployment.yaml
+      kubectl apply -f kubernetes/service.yaml
 
 images:
-  - 'gcr.io/inspired-memory-449608-f9/chatbot-app:latest'
-
-# secret manager integration
-# secrets:
-#   - secret: 'openai-api-key'  # Name of the secret in Secret Manager
-#     env-vars: '_OPENAI_API_KEY'
-  
-#   - secret: 'replicate-api-key'  # Name of the secret in Secret Manager
-#     env-vars: 'REPLICATE_API_TOKEN'
-
-#['run', 'deploy', 'chatbot-app', '--image', 'gcr.io/inspired-memory-449608-f9/chatbot-app:latest', '--region', 'us-central1', '--platform', 'managed', '--allow-unauthenticated']
-# '--set-env-vars','OPENAI_API_KEY=${_OPENAI_API_KEY},REPLICATE_API_TOKEN=${_REPLICATE_API_TOKEN}',
+  - 'gcr.io/inspired-memory-449608-f9/shop-copilot:latest'
