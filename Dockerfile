@@ -11,6 +11,6 @@ COPY ./app ./faiss_index ./material ./.streamlit /code/
 # Set environment variable for the port
 # ENV PORT=8080
 
-EXPOSE 8501
+# EXPOSE 8501
 
 CMD ["streamlit", "run", "app/main.py", "--server.port=8501", "--server.address=0.0.0.0"]
