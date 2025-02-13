@@ -298,7 +298,7 @@ def chat_message_two_icon(role, content):
 # Fungsi utama chatbot
 def chatbot_function(email):
     # Streamlit Interface
-    st.header("💬 Product Recommendation Chatbot")
+    # st.header("💬 Product Recommendation Chatbot")
 
     # Inisialisasi sesi untuk menyimpan percakapan dan ID pelanggan
     if "messages" not in st.session_state:
