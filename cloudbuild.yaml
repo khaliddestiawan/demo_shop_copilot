@@ -21,6 +21,7 @@ steps:
       - '--platform'
       - 'managed'
       - '--allow-unauthenticated'
+      - '--timeout' '900s'
       - '--update-secrets=OPENAI_API_KEY=openai-api-key:latest,REPLICATE_API_TOKEN=replicate-api-key:latest'
   
   # authenticate to GKE
