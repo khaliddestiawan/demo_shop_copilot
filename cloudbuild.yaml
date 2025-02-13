@@ -10,7 +10,18 @@ steps:
   #deploy to cloud run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: gcloud
-    args: ['run','deploy','shop-copilot','--image','gcr.io/inspired-memory-449608-f9/shop-copilot:latest','--region','us-central1','--platform','managed','--allow-unauthenticated', '--update-secrets','OPENAI_API_KEY=openai-api-key:latest','--update-secrets','REPLICATE_API_TOKEN=replicate-api-key:latest']
+    args: 
+      - 'run'
+      - 'deploy'
+      - 'shop-copilot'
+      - '--image'
+      - 'gcr.io/inspired-memory-449608-f9/shop-copilot:latest'
+      - '--region'
+      - 'us-central1'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--update-secrets=OPENAI_API_KEY=openai-api-key:latest,REPLICATE_API_TOKEN=replicate-api-key:latest'
   
   # authenticate to GKE
 #   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
