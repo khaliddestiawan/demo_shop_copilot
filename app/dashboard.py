@@ -5,12 +5,7 @@ import plotly.graph_objects as go
 from google.cloud import storage
 from io import StringIO
 
-# Page configuration
-st.set_page_config(
-    page_icon="📊",
-    layout="wide",
-    initial_sidebar_state="collapsed"
-)
+
 
 @st.cache_data
 def load_data():
