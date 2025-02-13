@@ -6,7 +6,11 @@ COPY ./requirements.txt /code/requirements.txt
 
 RUN pip3 install --no-cache-dir --upgrade -r /code/requirements.txt
 
-COPY ./app ./faiss_index ./material ./.streamlit /code/
+# Copy directories explicitly
+COPY ./app /code/app
+COPY ./faiss_index /code/faiss_index
+COPY ./material /code/material
+COPY ./.streamlit /code/.streamlit
 
 EXPOSE 8080
 
