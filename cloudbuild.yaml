@@ -40,5 +40,5 @@ steps:
 #         kubectl apply -f kubernetes/deployment.yaml
 #         kubectl apply -f kubernetes/service.yaml
 
-# images:
+images:
   - 'gcr.io/inspired-memory-449608-f9/shop-copilot:latest'
