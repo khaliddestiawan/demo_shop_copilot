@@ -24,23 +24,6 @@ steps:
       - '--timeout'
       - '900s'
       - '--update-secrets=OPENAI_API_KEY=openai-api-key:latest,REPLICATE_API_TOKEN=replicate-api-key:latest'
-  
-  # authenticate to GKE
-#   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-#     entrypoint: 'bash'
-#     args:
-#       - '-c'
-#       - |
-#         gcloud container clusters get-credentials shop-cluster --zone us-central1 --project inspired-memory-449608-f9
-
-#     # deploy kube config files to google kubernetes engine (GKE)
-#   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-#     entrypoint: 'bash'
-#     args: 
-#       - '-c'
-#       - |
-#         kubectl apply -f kubernetes/deployment.yaml
-#         kubectl apply -f kubernetes/service.yaml
 
 images:
   - 'gcr.io/inspired-memory-449608-f9/shop-copilot:latest'

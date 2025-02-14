@@ -6,6 +6,8 @@ import pandas as pd
 from io import StringIO
 from google.cloud import storage
 
+st.set_page_config(page_title="Shopping Copilot", page_icon="🛍️")
+
 # df = pd.read_csv('Dataset/Customer_Interaction_Data_v3.csv')
 
 # import dataset from GCS
