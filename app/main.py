@@ -62,8 +62,9 @@ def main():
             st.title("Personalized Shopping Copilot")
 
         st.logo(
-        "material/icon_iykra.png",
-        icon_image="material/icon_iykra.png",
+        "material/circle_iykra.png",
+        size="large",
+        icon_image="material/circle_iykra.png",
         )
         #st.header("💬 Product Recommendation Chatbot")
         #  Membuat logo aplikasi
@@ -130,7 +131,7 @@ def main():
                     /* Atur lebar container utama */
                     .block-container {
                         max-width: 95%;
-                        padding-left: 8rem;
+                        padding-left: 4rem;
                         padding-right: 2rem;
                     }
 
